@@ -1,15 +1,18 @@
-# Prompt Comparison Tool
+# Resume Skills Extraction - Prompt Comparison Tool
 
-A modern web application for comparing the performance and output differences between two prompt variations when applied to the same dataset. Built with Next.js, TypeScript, and Tailwind CSS.
+A modern web application for comparing two prompt variations when extracting skills from PDF resumes. Built with Next.js, TypeScript, and Tailwind CSS. Compare outputs from Anthropic Claude and OpenAI GPT models side-by-side.
 
 ## Features
 
-- **Multi-Provider Support**: Test prompts across Anthropic Claude, OpenAI GPT, and Google Gemini
-- **CSV Data Import**: Upload CSV files containing your test data
-- **Side-by-Side Comparison**: View outputs from both prompts simultaneously
+- **PDF Resume Upload**: Upload one or multiple PDF resumes (1-2 pages each)
+- **Multi-Provider Support**: Test prompts across Anthropic Claude and OpenAI GPT
+- **Specific Model Selection**: Choose from the latest models:
+  - **Anthropic**: Claude 3.5 Sonnet, Claude 3.5 Haiku, Claude 3 Opus, and more
+  - **OpenAI**: GPT-4o, GPT-4o Mini, GPT-4 Turbo, GPT-4, GPT-3.5 Turbo
+- **Side-by-Side Comparison**: View skills extraction from both prompts simultaneously
 - **Diff Highlighting**: Visual highlighting of differences between outputs
 - **Export Results**: Download comparison results as JSON for further analysis
-- **Real-time Processing**: Process multiple inputs and see results as they complete
+- **Multiple Resume Processing**: Process multiple resumes in a single batch
 
 ## Tech Stack
 
@@ -18,25 +21,32 @@ A modern web application for comparing the performance and output differences be
 - **LLM Integrations**:
   - Anthropic SDK
   - OpenAI SDK
-  - Google Generative AI SDK
-- **Data Processing**: PapaParse for CSV handling
+- **PDF Processing**: pdfjs-dist for text extraction
 - **Diff Visualization**: diff library for text comparison
+
+## Use Case
+
+This tool is designed for testing different prompt variations for extracting technical skills from resumes. For example:
+
+- **Prompt A**: "Extract all technical skills as a comma-separated list"
+- **Prompt B**: "Identify technical skills and format as JSON with categories"
+
+Compare which prompt provides better results for your specific needs.
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js 18+ and npm
-- API keys from at least one of the following providers:
+- API keys from at least one provider:
   - [Anthropic](https://console.anthropic.com/)
   - [OpenAI](https://platform.openai.com/api-keys)
-  - [Google AI](https://makersuite.google.com/app/apikey)
 
 ### Installation
 
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/pupase/evalengine.git
    cd evalengine
    ```
 
@@ -54,7 +64,6 @@ A modern web application for comparing the performance and output differences be
    ```env
    ANTHROPIC_API_KEY=your_anthropic_api_key_here
    OPENAI_API_KEY=your_openai_api_key_here
-   GOOGLE_API_KEY=your_google_api_key_here
    ```
 
 5. Run the development server:
@@ -66,62 +75,51 @@ A modern web application for comparing the performance and output differences be
 
 ## Usage
 
-### 1. Prepare Your Data
+### 1. Upload PDF Resume(s)
 
-Create a CSV file with your test data. The tool will automatically detect the data column, or you can use columns named: `text`, `data`, `content`, or `input`.
+- Click "Upload PDF Resume(s)"
+- Select one or more PDF files (1-2 pages each)
+- The tool will extract text from all pages
 
-Example CSV:
-```csv
-text
-"Extract key skills from this resume: Software Engineer with 5 years of experience in React, Node.js, and AWS."
-"Identify the main technologies: Full-stack developer skilled in Python, Django, PostgreSQL, and Docker."
-```
+### 2. Select Model
 
-### 2. Configure Your Test
+1. **Choose Provider**: Anthropic (Claude) or OpenAI (GPT)
+2. **Select Specific Model**: Pick from available models
+   - Anthropic: Claude 3.5 Sonnet (Latest), Claude 3.5 Haiku, Claude 3 Opus, etc.
+   - OpenAI: GPT-4o (Latest), GPT-4o Mini, GPT-4 Turbo, etc.
 
-1. **Upload CSV**: Click "Upload CSV File" and select your data file
-2. **Select Model**: Choose from Anthropic Claude, OpenAI GPT, or Google Gemini
-3. **System Prompt (Optional)**: Add any system-level instructions
-4. **Prompt A**: Enter your first prompt variation
-5. **Prompt B**: Enter your second prompt variation
+### 3. Configure Prompts
 
-### 3. Run Comparison
+1. **System Prompt (Optional)**: Add context like "You are an expert at analyzing resumes..."
+2. **Prompt A**: Enter your first skills extraction prompt
+3. **Prompt B**: Enter your alternative skills extraction prompt
 
-Click "Run Comparison" to execute both prompts against all inputs. The tool will:
-- Process each row in your CSV
-- Execute Prompt A and Prompt B for each input
-- Capture outputs and any errors
-- Display results in a comparison view
+### 4. Run Comparison
 
-### 4. Analyze Results
+Click "Run Comparison" to execute both prompts against all uploaded resumes.
 
-- Navigate through results using the dropdown selector
+### 5. Analyze Results
+
+- Navigate through results for each resume
 - View inputs and outputs side-by-side
 - See highlighted differences between outputs
 - Export results as JSON for further analysis
 
-## Example Use Case
+## Example Prompts
 
-**Scenario**: Testing resume parsing prompts
-
-**CSV Data**:
-```csv
-text
-"Software Engineer with expertise in React, TypeScript, and Node.js"
-"Data Scientist skilled in Python, Machine Learning, and SQL"
+### Prompt A - Simple List
+```
+Extract all technical skills from this resume. Return as a comma-separated list.
 ```
 
-**Prompt A**:
+### Prompt B - Structured JSON
 ```
-Extract all technical skills mentioned in the text. Return as a comma-separated list.
+Identify all technical skills from this resume. Format as a JSON array with each skill having:
+{
+  "name": "skill name",
+  "category": "programming language | framework | tool | cloud platform | database"
+}
 ```
-
-**Prompt B**:
-```
-Identify the technical skills from the text. Format as a JSON array of skill objects with "name" and "category" fields.
-```
-
-**Result**: Compare which prompt provides more structured, accurate, or useful outputs.
 
 ## Project Structure
 
@@ -130,7 +128,7 @@ evalengine/
 ├── app/
 │   ├── api/
 │   │   ├── compare/route.ts      # Comparison execution endpoint
-│   │   └── parse-csv/route.ts    # CSV parsing endpoint
+│   │   └── parse-pdf/route.ts    # PDF parsing endpoint
 │   ├── layout.tsx
 │   └── page.tsx                  # Main application UI
 ├── components/
@@ -147,20 +145,25 @@ evalengine/
 
 ## API Routes
 
-### POST /api/parse-csv
+### POST /api/parse-pdf
 
-Parses an uploaded CSV file and converts it to the input format.
+Parses uploaded PDF files and extracts text.
 
-**Request**: FormData with CSV file
+**Request**: FormData with multiple PDF files
 
 **Response**:
 ```json
 {
   "inputs": [
     {
-      "id": "row-0",
-      "data": "text content",
-      "metadata": { ... }
+      "id": "resume-0",
+      "data": "extracted text content",
+      "filename": "resume.pdf",
+      "metadata": {
+        "filename": "resume.pdf",
+        "pages": "2",
+        "size": "245678"
+      }
     }
   ]
 }
@@ -168,7 +171,7 @@ Parses an uploaded CSV file and converts it to the input format.
 
 ### POST /api/compare
 
-Executes both prompts against all inputs.
+Executes both prompts against all inputs using the selected model.
 
 **Request**:
 ```json
@@ -177,7 +180,8 @@ Executes both prompts against all inputs.
     "systemPrompt": "optional system prompt",
     "promptA": "first prompt",
     "promptB": "second prompt",
-    "model": "anthropic"
+    "provider": "anthropic",
+    "model": "claude-3-5-sonnet-20241022"
   },
   "inputs": [...]
 }
@@ -188,8 +192,8 @@ Executes both prompts against all inputs.
 {
   "results": [
     {
-      "inputId": "row-0",
-      "input": "original text",
+      "inputId": "resume-0",
+      "input": "original resume text",
       "promptAOutput": "output from prompt A",
       "promptBOutput": "output from prompt B",
       "timestamp": "2025-10-21T..."
@@ -197,6 +201,22 @@ Executes both prompts against all inputs.
   ]
 }
 ```
+
+## Available Models
+
+### Anthropic Claude
+- **claude-3-5-sonnet-20241022**: Claude 3.5 Sonnet (Latest)
+- **claude-3-5-haiku-20241022**: Claude 3.5 Haiku
+- **claude-3-opus-20240229**: Claude 3 Opus
+- **claude-3-sonnet-20240229**: Claude 3 Sonnet
+- **claude-3-haiku-20240307**: Claude 3 Haiku
+
+### OpenAI GPT
+- **gpt-4o**: GPT-4o (Latest)
+- **gpt-4o-mini**: GPT-4o Mini
+- **gpt-4-turbo**: GPT-4 Turbo
+- **gpt-4**: GPT-4
+- **gpt-3.5-turbo**: GPT-3.5 Turbo
 
 ## Building for Production
 
@@ -214,19 +234,21 @@ If you see errors like "API_KEY not configured":
 2. Restart the development server after adding environment variables
 3. Ensure the API key format is correct (no extra quotes or spaces)
 
-### CSV Parsing Issues
+### PDF Parsing Issues
 
-If CSV upload fails:
-1. Ensure the file is valid CSV format
-2. Check that at least one column contains text data
-3. Try naming your data column as "text", "data", or "content"
+If PDF upload fails:
+1. Ensure files are valid PDF format (not scanned images)
+2. Check that PDFs contain selectable text (not image-only PDFs)
+3. Try converting image-based PDFs using OCR first
 
 ### Model Selection
 
 Different models have different capabilities and pricing:
-- **Anthropic Claude**: Best for complex reasoning and long contexts
-- **OpenAI GPT**: Fast and versatile
-- **Google Gemini**: Good balance of speed and quality
+- **Claude 3.5 Sonnet**: Best for complex reasoning and nuanced extraction
+- **Claude 3.5 Haiku**: Faster, cost-effective for simpler tasks
+- **GPT-4o**: Latest OpenAI model with strong performance
+- **GPT-4o Mini**: Faster and more cost-effective option
+- **GPT-3.5 Turbo**: Budget-friendly for simpler extraction tasks
 
 ## Contributing
 

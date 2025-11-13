@@ -11,9 +11,9 @@ export async function POST(request: NextRequest) {
     };
 
     // Validate required fields
-    if (!config.promptA || !config.promptB || !config.model) {
+    if (!config.promptA || !config.promptB || !config.provider || !config.model) {
       return NextResponse.json(
-        { error: 'Missing required fields: promptA, promptB, or model' },
+        { error: 'Missing required fields: promptA, promptB, provider, or model' },
         { status: 400 }
       );
     }
@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
       // Execute Prompt A
       try {
         result.promptAOutput = await executePrompt(
+          config.provider,
           config.model,
           config.systemPrompt,
           config.promptA,
@@ -52,6 +53,7 @@ export async function POST(request: NextRequest) {
       // Execute Prompt B
       try {
         result.promptBOutput = await executePrompt(
+          config.provider,
           config.model,
           config.systemPrompt,
           config.promptB,

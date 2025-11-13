@@ -1,10 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { ModelProvider } from '@/types';
+import { ModelProvider, ModelName, AnthropicModel, OpenAIModel } from '@/types';
 
 export async function executePrompt(
   provider: ModelProvider,
+  model: ModelName,
   systemPrompt: string | undefined,
   userPrompt: string,
   input: string
@@ -13,17 +13,16 @@ export async function executePrompt(
 
   switch (provider) {
     case 'anthropic':
-      return executeAnthropicPrompt(systemPrompt, fullPrompt);
+      return executeAnthropicPrompt(model as AnthropicModel, systemPrompt, fullPrompt);
     case 'openai':
-      return executeOpenAIPrompt(systemPrompt, fullPrompt);
-    case 'google':
-      return executeGooglePrompt(systemPrompt, fullPrompt);
+      return executeOpenAIPrompt(model as OpenAIModel, systemPrompt, fullPrompt);
     default:
       throw new Error(`Unsupported provider: ${provider}`);
   }
 }
 
 async function executeAnthropicPrompt(
+  model: AnthropicModel,
   systemPrompt: string | undefined,
   userPrompt: string
 ): Promise<string> {
@@ -35,7 +34,7 @@ async function executeAnthropicPrompt(
   const client = new Anthropic({ apiKey });
 
   const message = await client.messages.create({
-    model: 'claude-3-5-sonnet-20241022',
+    model,
     max_tokens: 4096,
     system: systemPrompt,
     messages: [
@@ -55,6 +54,7 @@ async function executeAnthropicPrompt(
 }
 
 async function executeOpenAIPrompt(
+  model: OpenAIModel,
   systemPrompt: string | undefined,
   userPrompt: string
 ): Promise<string> {
@@ -80,7 +80,7 @@ async function executeOpenAIPrompt(
   });
 
   const completion = await client.chat.completions.create({
-    model: 'gpt-4-turbo-preview',
+    model,
     messages,
     max_tokens: 4096,
   });
@@ -91,30 +91,4 @@ async function executeOpenAIPrompt(
   }
 
   return content;
-}
-
-async function executeGooglePrompt(
-  systemPrompt: string | undefined,
-  userPrompt: string
-): Promise<string> {
-  const apiKey = process.env.GOOGLE_API_KEY;
-  if (!apiKey) {
-    throw new Error('GOOGLE_API_KEY not configured');
-  }
-
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-pro',
-    systemInstruction: systemPrompt,
-  });
-
-  const result = await model.generateContent(userPrompt);
-  const response = result.response;
-  const text = response.text();
-
-  if (!text) {
-    throw new Error('No response from Google Gemini');
-  }
-
-  return text;
 }
