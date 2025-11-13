@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { InputRow } from '@/types';
-import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
+import * as pdfParseModule from 'pdf-parse';
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,6 +26,10 @@ export async function POST(request: NextRequest) {
 
     const inputs: InputRow[] = [];
 
+    // Get the pdf parse function (handle both CJS and ESM)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pdfParse = (pdfParseModule as any).default || pdfParseModule;
+
     // Process each PDF file
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -33,26 +37,11 @@ export async function POST(request: NextRequest) {
       try {
         // Convert file to buffer
         const arrayBuffer = await file.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
+        const buffer = Buffer.from(arrayBuffer);
 
-        // Load PDF document
-        const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
-        const pdfDoc = await loadingTask.promise;
-
-        const numPages = pdfDoc.numPages;
-        let fullText = '';
-
-        // Extract text from all pages
-        for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-          const page = await pdfDoc.getPage(pageNum);
-          const textContent = await page.getTextContent();
-          const pageText = textContent.items
-            .map((item) => ('str' in item ? item.str : ''))
-            .join(' ');
-          fullText += pageText + '\n';
-        }
-
-        const text = fullText.trim();
+        // Parse PDF
+        const data = await pdfParse(buffer);
+        const text = data.text.trim();
 
         if (!text) {
           return NextResponse.json(
@@ -68,7 +57,7 @@ export async function POST(request: NextRequest) {
           filename: file.name,
           metadata: {
             filename: file.name,
-            pages: numPages.toString(),
+            pages: data.numpages.toString(),
             size: file.size.toString(),
           },
         });
