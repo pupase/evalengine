@@ -1,4 +1,4 @@
-# Resume Skills Extraction - Prompt Comparison Tool
+# Prompt Comparison Tool
 
 A modern web application for comparing two prompt variations when extracting skills from PDF resumes. Built with Next.js, TypeScript, and Tailwind CSS. Compare outputs from Anthropic Claude and OpenAI GPT models side-by-side.
 
